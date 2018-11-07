@@ -64,7 +64,7 @@ lookup_host (const char *lhost)
       inet_ntop (res->ai_family, ptr, addrstr, 100);
 char *ipad;
 
-memcpy(ipad, addrstr, strlen(addrstr+1));
+ memcpy(ipad, addrstr, strlen(addrstr+1)); 
   return ipad;
 }
 
@@ -102,6 +102,9 @@ url2host(const char *host, short *port, char **path)
                 free(url);
                 return (NULL);
         }
-
+/*
+	char *upath;
+	memcpy(upath, path, strlen(path+1));
+*/
         return (url);
 }

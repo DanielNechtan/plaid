@@ -108,6 +108,6 @@ struct httphead	*http_head_get(const char *,
 			struct httphead *, size_t);
 struct Request *parse_request(const char *raw);
 void free_header(struct Header *h);
-void free_request(struct Request *req);
+/* void free_request(struct Request *req); */
 
 #endif /* HTTP_H */

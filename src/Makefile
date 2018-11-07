@@ -14,4 +14,4 @@ http.o: http.c
 util.o: util.c
 	gcc -o util.o util.c -c $(CFLAGS)
 clean:
-	/bin/rm plaid *.o
+	/bin/rm -f plaid *.o *.core

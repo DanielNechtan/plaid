@@ -292,7 +292,7 @@ http_alloc(const char *addr,
 	struct sockaddr_storage ss;
 	int		 family, fd, c, k;
 	socklen_t	 len;
-	size_t		 cur, i = 0;
+/*	size_t		 cur, i = 0; */
 	struct http	*http;
 
 /*	if (i == addrsz)
@@ -800,15 +800,17 @@ void free_header(struct Header *h) {
 }
 
 
-void free_request(struct Request *req) {
 /*
+void free_request(struct Request *req) {
+
     free(req->url);
     free(req->version);
     free_header(req->headers);
     free(req->body);
     free(req);
-*/
+
 }
+*/
 
 #if 0
 int

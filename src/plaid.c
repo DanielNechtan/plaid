@@ -42,15 +42,15 @@ static void usage()
 
 int main(int argc, char *argv[])
 {
-	char *url = "", *host = "", *cafile = get_path_ca(), *path = "/";
-	int i, ch, staplefd = -1, infd = -1, nonce = 1;
-	http_request *request = NULL;
-	size_t rescount, httphsz = 0; 
-	size_t postsz;
+	char *url = "", *host = "", *path = "/";
+/*	char *cafile = get_path_ca(); */
+/*	int i; */
+	size_t i;
+/*	http_request *request = NULL; */
+	size_t httphsz = 0; 
 	char    *ip;
 	struct httphead	*httph = NULL;
 	struct httpget *hget;
-	ssize_t written, w;
 	short port;
 /*	if (pledge("stdio inet rpath dns", NULL) == -1)
 		err(1, "pledge");
@@ -70,11 +70,14 @@ int main(int argc, char *argv[])
 		errx(1, "url2host failed");
 	if (*path == '\0')
 		path = "/";
-	ip = lookup_host(host);
 
+/*	char *upath; */
+/*	memcpy(upath, path, strlen(path+1)); */
+/*	printf("Path: %s", upath); */
+	ip = lookup_host(host);
 	printf("Host: %s (%s)\tPort: %d\tPath: %s\n", host, ip, port, path);
 
-/*		hget = http_get(sources, rescount, host, port, path,
+/*		hget = http_get(sources, rescount, host, port, upath,
 		    request->body, postsz);
 */
 	hget = http_get(ip, host, port, path);
@@ -85,9 +88,10 @@ int main(int argc, char *argv[])
 	for (i = 0; i < httphsz; i++)
 		printf("[%s]=[%s]\n", httph[i].key, httph[i].val);
 	printf("	  [Body]=[%zu bytes]\n", hget->bodypartsz);
-/*	printf("Body: %s\n", hget->bodypart); */
+	printf("Body: %s\n", hget->bodypart); 
 	if (hget->bodypartsz <= 0)
 			errx(1, "No body in reply from %s", host);
 	if (hget->code != 200)
 			errx(1, "http reply code %d from %s", hget->code, host);
+
 }
