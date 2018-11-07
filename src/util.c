@@ -30,7 +30,7 @@
 #include <time.h>
 #include <unistd.h>
 
-char *ipad;
+/* char ipad; */
 
 char *
 lookup_host (const char *lhost)
@@ -57,6 +57,7 @@ lookup_host (const char *lhost)
     {*/
       inet_ntop (res->ai_family, res->ai_addr->sa_data, addrstr, 100);
 
+
       switch (res->ai_family)
         {
         case AF_INET:
@@ -68,8 +69,14 @@ lookup_host (const char *lhost)
         }
       inet_ntop (res->ai_family, ptr, addrstr, 100);
 /*        printf("IPv%d: %s\n", res->ai_family == PF_INET6 ? 6 : 4, addrstr); */
-ipad = addrstr;
-  return (ipad);
+/* ipad = addrstr; */
+char *ipad;
+/* memcpy(ipad, addrstr, strlen(addrstr+1)); */
+/*	memcpy((void *)ipad, (void *)addrstr, strlen(addrstr+1)); */
+/* ipad =	memcpy((void *)ipad, &addrstr, sizeof(sin_addr)); */
+
+memcpy(ipad, addrstr, strlen(addrstr+1));
+  return ipad;
 }
 
 /*
