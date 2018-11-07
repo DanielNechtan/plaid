@@ -27,6 +27,22 @@ struct	source {
 
 struct	http;
 
+typedef enum Method {UNSUPPORTED, GET, HEAD} Method;
+
+typedef struct Header {
+    char *name;
+    char *value;
+    struct Header *next;
+} Header;
+
+typedef struct http_request {
+        enum Method method;
+        char *url;
+        char *version;
+        struct Header *headers;
+        char *body;
+} http_request;
+
 /*
  * Write and read callbacks to allow HTTP and HTTPS.
  * Both of these return the number of bytes read (or written) or -1 on
@@ -67,16 +83,15 @@ struct	httpget {
 int		 http_init(void);
 
 /* Convenience functions. */
-struct httpget	*http_get(const struct source *, size_t,
-			const char *, short, const char *,
-			const void *, size_t);
+struct httpget	*http_get(const char *, const char *, short, const char *);
 void		 http_get_free(struct httpget *);
+/* void		http_get(const char *, const char *, short, const char *); */
+
 
 /* Allocation and release. */
-struct http	*http_alloc(const struct source *, size_t,
-			const char *, short, const char *);
+struct http	*http_alloc(const char *, const char *, short, const char *);
 void		 http_free(struct http *);
-struct httpxfer	*http_open(const struct http *, const void *, size_t);
+struct httpxfer	*http_open(const struct http *);
 void		 http_close(struct httpxfer *);
 void		 http_disconnect(struct http *);
 
@@ -91,6 +106,8 @@ int		 http_head_status(const struct http *,
 			struct httphead *, size_t);
 struct httphead	*http_head_get(const char *,
 			struct httphead *, size_t);
-
+struct Request *parse_request(const char *raw);
+void free_header(struct Header *h);
+void free_request(struct Request *req);
 
 #endif /* HTTP_H */

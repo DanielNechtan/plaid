@@ -17,6 +17,9 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
 #include <err.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -29,116 +32,8 @@
 #include <unistd.h>
 
 #include "http.h"
+#include "util.h"
 
-#define MAX_SERVERS_DNS 8
-
-struct addr {
-	int	 family; /* 4 for PF_INET, 6 for PF_INET6 */
-	char	 ip[INET6_ADDRSTRLEN];
-};
-
-static ssize_t
-host_dns(const char *s, struct addr vec[MAX_SERVERS_DNS])
-{
-	struct addrinfo		 hints, *res0, *res;
-	int			 error;
-	ssize_t			 vecsz;
-	struct sockaddr		*sa;
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = PF_UNSPEC;
-	hints.ai_socktype = SOCK_DGRAM; /* DUMMY */
-
-	error = getaddrinfo(s, NULL, &hints, &res0);
-
-	if (error == EAI_AGAIN ||
-#ifdef EAI_NODATA
-	    error == EAI_NODATA ||
-#endif
-	    error == EAI_NONAME)
-		return 0;
-
-	if (error) {
-		warnx("%s: parse error: %s", s, gai_strerror(error));
-		return -1;
-	}
-
-	for (vecsz = 0, res = res0;
-	    res != NULL && vecsz < MAX_SERVERS_DNS;
-	    res = res->ai_next) {
-		if (res->ai_family != AF_INET &&
-		    res->ai_family != AF_INET6)
-			continue;
-
-		sa = res->ai_addr;
-
-		if (res->ai_family == AF_INET) {
-			vec[vecsz].family = 4;
-			inet_ntop(AF_INET,
-			    &(((struct sockaddr_in *)sa)->sin_addr),
-				vec[vecsz].ip, INET6_ADDRSTRLEN);
-		} else {
-			vec[vecsz].family = 6;
-			inet_ntop(AF_INET6,
-			    &(((struct sockaddr_in6 *)sa)->sin6_addr),
-			    vec[vecsz].ip, INET6_ADDRSTRLEN);
-		}
-
-	/*	dspew("DNS returns %s for %s\n", vec[vecsz].ip, s); */
-		printf("DNS returns %s for %s\n", vec[vecsz].ip, s);
-		vecsz++;
-		break;
-	}
-
-	freeaddrinfo(res0);
-	return vecsz;
-}
-
-/*
- * Extract the domain and port from a URL.
- * The url must be formatted as schema://address[/stuff].
- * This returns NULL on failure.
- */
-static char *
-url2host(const char *host, short *port, char **path)
-{
-	char	*url, *ep;
-
-	/* We only understand HTTP and HTTPS. */
-
-	if (strncmp(host, "https://", 8) == 0) {
-		*port = 443;
-		if ((url = strdup(host + 8)) == NULL) {
-			warn("strdup");
-			return (NULL);
-		}
-	} else if (strncmp(host, "http://", 7) == 0) {
-		*port = 80;
-		if ((url = strdup(host + 7)) == NULL) {
-			warn("strdup");
-			return (NULL);
-		}
-	} else {
-		warnx("%s: unknown schema", host);
-		return (NULL);
-	}
-
-	/* Terminate path part. */
-
-	if ((ep = strchr(url, '/')) != NULL) {
-		*path = strdup(ep);
-		*ep = '\0';
-	} else
-		*path = strdup("");
-
-	if (*path == NULL) {
-		warn("strdup");
-		free(url);
-		return (NULL);
-	}
-
-	return (url);
-}
 static void usage()
 {
 	fprintf(stderr, "usage: %s [-u url]\n", getprogname()); 
@@ -148,20 +43,24 @@ static void usage()
 int main(int argc, char *argv[])
 {
 char *url = "", *host = "", *cafile = get_path_ca(), *path = "/";
-struct addr addrs[MAX_SERVERS_DNS] = {{0}};
-struct source sources[MAX_SERVERS_DNS];
 int i, ch, staplefd = -1, infd = -1, nonce = 1;
+http_request *request = NULL;
 size_t rescount, httphsz = 0; 
+size_t postsz;
+/* struct source addr; */
+char    *ip;
 struct httphead	*httph = NULL;
 struct httpget *hget;
 ssize_t written, w;
 short port;
 /*	if (pledge("stdio inet rpath dns", NULL) == -1)
 		err(1, "pledge");
-*/	if (unveil("/tmp", "w") == -1)
+*/
+/*	if (unveil("/tmp", "w") == -1)
 		err(1, "unveil");
 	if (unveil(cafile, "r") == -1)
 		err(1, "unveil");	
+*/
 if(argc < 2){
 	usage();
 }
@@ -170,14 +69,22 @@ if(argv[2])
 
 printf("URL: %s\t", url);
 printf("CA: %s\n", cafile);
+
 if ((host = url2host(url, &port, &path)) == NULL)
 	errx(1, "url2host failed");
 if (*path == '\0')
-		path = "/";
+	path = "/";
+
 printf("Host: %s\tPort: %d\tPath: %s\n", host, port, path);
-		rescount = host_dns(host, addrs);
-		for (i = 0; i < rescount; i++) {
-			sources[i].ip = addrs[i].ip;
-			sources[i].family = addrs[i].family;
-		}
+
+/* ip = lookup_host(host); */
+ip = lookup_host(host);
+	printf("IP: %s\n", ip);
+/*		hget = http_get(sources, rescount, host, port, path,
+		    request->body, postsz);
+*/
+		hget = http_get(ip, host, port, path);
+		if (hget == NULL)
+			errx(1, "http_get");
+		free(ip);
 }

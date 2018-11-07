@@ -22,12 +22,15 @@
 
 #include <ctype.h>
 #include <err.h>
+#include <errno.h>
 #include <limits.h>
 #include <netdb.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <tls.h>
 #include <unistd.h>
 
@@ -70,6 +73,62 @@ struct	http {
 
 struct tls_config *tlscfg;
 
+void
+report_tls(struct tls * tls_ctx, char * host)
+{
+	time_t t;
+	const char *ocsp_url;
+
+	fprintf(stderr, "TLS handshake negotiated %s/%s with host %s\n",
+	    tls_conn_version(tls_ctx), tls_conn_cipher(tls_ctx), host);
+	fprintf(stderr, "Peer name: %s\n", host);
+	if (tls_peer_cert_subject(tls_ctx))
+		fprintf(stderr, "Subject: %s\n",
+		    tls_peer_cert_subject(tls_ctx));
+	if (tls_peer_cert_issuer(tls_ctx))
+		fprintf(stderr, "Issuer: %s\n",
+		    tls_peer_cert_issuer(tls_ctx));
+	if ((t = tls_peer_cert_notbefore(tls_ctx)) != -1)
+		fprintf(stderr, "Valid From: %s", ctime(&t));
+	if ((t = tls_peer_cert_notafter(tls_ctx)) != -1)
+		fprintf(stderr, "Valid Until: %s", ctime(&t));
+	if (tls_peer_cert_hash(tls_ctx))
+		fprintf(stderr, "Cert Hash: %s\n",
+		    tls_peer_cert_hash(tls_ctx));
+	ocsp_url = tls_peer_ocsp_url(tls_ctx);
+	if (ocsp_url != NULL)
+		fprintf(stderr, "OCSP URL: %s\n", ocsp_url);
+	switch (tls_peer_ocsp_response_status(tls_ctx)) {
+	case TLS_OCSP_RESPONSE_SUCCESSFUL:
+		fprintf(stderr, "OCSP Stapling: %s\n",
+		    tls_peer_ocsp_result(tls_ctx) == NULL ?  "" :
+		    tls_peer_ocsp_result(tls_ctx));
+		fprintf(stderr,
+		    "  response_status=%d cert_status=%d crl_reason=%d\n",
+		    tls_peer_ocsp_response_status(tls_ctx),
+		    tls_peer_ocsp_cert_status(tls_ctx),
+		    tls_peer_ocsp_crl_reason(tls_ctx));
+		t = tls_peer_ocsp_this_update(tls_ctx);
+		fprintf(stderr, "  this update: %s",
+		    t != -1 ? ctime(&t) : "\n");
+		t =  tls_peer_ocsp_next_update(tls_ctx);
+		fprintf(stderr, "  next update: %s",
+		    t != -1 ? ctime(&t) : "\n");
+		t =  tls_peer_ocsp_revocation_time(tls_ctx);
+		fprintf(stderr, "  revocation: %s",
+		    t != -1 ? ctime(&t) : "\n");
+		break;
+	case -1:
+		break;
+	default:
+		fprintf(stderr, "OCSP Stapling:  failure - response_status %d (%s)\n",
+		    tls_peer_ocsp_response_status(tls_ctx),
+		    tls_peer_ocsp_result(tls_ctx) == NULL ?  "" :
+		    tls_peer_ocsp_result(tls_ctx));
+		break;
+
+	}
+}
 static ssize_t
 dosysread(char *buf, size_t sz, const struct http *http)
 {
@@ -227,62 +286,46 @@ http_free(struct http *http)
 }
 
 struct http *
-http_alloc(const struct source *addrs, size_t addrsz,
+http_alloc(const char *addr,
     const char *host, short port, const char *path)
 {
 	struct sockaddr_storage ss;
-	int		 family, fd, c;
+	int		 family, fd, c, k;
 	socklen_t	 len;
 	size_t		 cur, i = 0;
 	struct http	*http;
 
-	/* Do this while we still have addresses to connect. */
-again:
-	if (i == addrsz)
+/*	if (i == addrsz)
 		return NULL;
 	cur = i++;
-
-	/* Convert to PF_INET or PF_INET6 address from string. */
+*/
 
 	memset(&ss, 0, sizeof(struct sockaddr_storage));
+/* addr = "192.168.0.23"; */
 
-	if (addrs[cur].family == 4) {
-		family = PF_INET;
-		((struct sockaddr_in *)&ss)->sin_family = AF_INET;
-		((struct sockaddr_in *)&ss)->sin_port = htons(port);
-		c = inet_pton(AF_INET, addrs[cur].ip,
-		    &((struct sockaddr_in *)&ss)->sin_addr);
-		len = sizeof(struct sockaddr_in);
-	} else if (addrs[cur].family == 6) {
-		family = PF_INET6;
-		((struct sockaddr_in6 *)&ss)->sin6_family = AF_INET6;
-		((struct sockaddr_in6 *)&ss)->sin6_port = htons(port);
-		c = inet_pton(AF_INET6, addrs[cur].ip,
-		    &((struct sockaddr_in6 *)&ss)->sin6_addr);
-		len = sizeof(struct sockaddr_in6);
-	} else {
-		warnx("%s: unknown family", addrs[cur].ip);
-		goto again;
-	}
+	printf("addr content: %s\n", addr);
+	printf("host content: %s\n", host);
+	family = PF_INET;
+	((struct sockaddr_in *)&ss)->sin_family = AF_INET;
+	((struct sockaddr_in *)&ss)->sin_port = htons(port);
+	c = inet_pton(AF_INET, addr,
+	    &((struct sockaddr_in *)&ss)->sin_addr);
+	len = sizeof(struct sockaddr_in);
 
 	if (c < 0) {
-		warn("%s: inet_ntop", addrs[cur].ip);
-		goto again;
+		warn("%s: inet_ntop", addr);
 	} else if (c == 0) {
-		warnx("%s: inet_ntop", addrs[cur].ip);
-		goto again;
+		warnx("%s: inet_ntop", addr);
 	}
 
 	/* Create socket and connect. */
 
 	fd = socket(family, SOCK_STREAM, 0);
 	if (fd == -1) {
-		warn("%s: socket", addrs[cur].ip);
-		goto again;
+		warn("%s: socket", addr);
 	} else if (connect(fd, (struct sockaddr *)&ss, len) == -1) {
-		warn("%s: connect", addrs[cur].ip);
+		warn("%s: connect", addr);
 		close(fd);
-		goto again;
 	}
 
 	/* Allocate the communicator. */
@@ -295,8 +338,8 @@ again:
 	}
 	http->fd = fd;
 	http->port = port;
-	http->src.family = addrs[cur].family;
-	http->src.ip = strdup(addrs[cur].ip);
+	http->src.family = 4;
+	http->src.ip = strdup(addr);
 	http->host = strdup(host);
 	http->path = strdup(path);
 	if (http->src.ip == NULL || http->host == NULL || http->path == NULL) {
@@ -329,6 +372,12 @@ again:
 		    http->host, tls_error(http->ctx));
 		goto err;
 	}
+	do {
+		if ((k == tls_handshake(http->ctx)) == -1)
+			errx(1, "tls handshake failed (%s)",
+				tls_error(http->ctx));
+	} while (k == TLS_WANT_POLLIN || k == TLS_WANT_POLLOUT);
+	report_tls(http->ctx, http->host);
 
 	return http;
 err:
@@ -337,12 +386,13 @@ err:
 }
 
 struct httpxfer *
-http_open(const struct http *http, const void *p, size_t psz)
+http_open(const struct http *http)
 {
 	char		*req;
 	int		 c;
 	struct httpxfer	*trans;
-
+	size_t psz = 0;
+	int *p = NULL;
 	if (p == NULL) {
 		c = asprintf(&req,
 		    "GET %s HTTP/1.0\r\n"
@@ -355,7 +405,7 @@ http_open(const struct http *http, const void *p, size_t psz)
 		    "Host: %s\r\n"
 		    "Content-Length: %zu\r\n"
 		    "\r\n",
-		    http->path, http->host, psz);
+		    http->path, http->host, psz); /* fixme */
 	}
 	if (c == -1) {
 		warn("asprintf");
@@ -363,7 +413,7 @@ http_open(const struct http *http, const void *p, size_t psz)
 	} else if (!http_write(req, c, http)) {
 		free(req);
 		return NULL;
-	} else if (p != NULL && !http_write(p, psz, http)) {
+	} else if (p != NULL && !http_write(req, c, http)) {
 		free(req);
 		return NULL;
 	}
@@ -680,8 +730,8 @@ http_get_free(struct httpget *g)
 }
 
 struct httpget *
-http_get(const struct source *addrs, size_t addrsz, const char *domain,
-    short port, const char *path, const void *post, size_t postsz)
+http_get(const char *addr, const char *host,
+    short port, const char *path)
 {
 	struct http	*h;
 	struct httpxfer	*x;
@@ -690,12 +740,12 @@ http_get(const struct source *addrs, size_t addrsz, const char *domain,
 	size_t		 headsz, bodsz, headrsz;
 	int		 code;
 	char		*bod, *headr;
-
-	h = http_alloc(addrs, addrsz, domain, port, path);
+	printf("http_get: %s\n", addr);
+	h = http_alloc(addr, host, port, path);
 	if (h == NULL)
 		return NULL;
 
-	if ((x = http_open(h, post, postsz)) == NULL) {
+	if ((x = http_open(h)) == NULL) {
 		http_free(h);
 		return NULL;
 	} else if ((headr = http_head_read(h, x, &headrsz)) == NULL) {
@@ -739,6 +789,26 @@ http_get(const struct source *addrs, size_t addrsz, const char *domain,
 	return g;
 }
 
+void free_header(struct Header *h) {
+    if (h) {
+        free(h->name);
+        free(h->value);
+        free_header(h->next);
+        free(h);
+    }
+}
+
+
+void free_request(struct Request *req) {
+/*
+    free(req->url);
+    free(req->version);
+    free_header(req->headers);
+    free(req->body);
+    free(req);
+*/
+}
+
 #if 0
 int
 main(void)
@@ -746,18 +816,20 @@ main(void)
 	struct httpget	*g;
 	struct httphead	*httph;
 	size_t		 i, httphsz;
-	struct source	 addrs[2];
+	char	 	 addr;
 	size_t		 addrsz;
 
 #if 0
-	addrs[0].ip = "127.0.0.1";
-	addrs[0].family = 4;
+	addr = "127.0.0.1";
+/*	addr.family = 4;*/
 	addrsz = 1;
 #else
-	addrs[0].ip = "2a00:1450:400a:806::2004";
-	addrs[0].family = 6;
-	addrs[1].ip = "104.27.152.82";
-	addrs[1].family = 4;
+/*
+	addr.ip = "2a00:1450:400a:806::2004";
+	addr.family = 6;
+*/
+	addr = "104.27.152.82";
+/*	addr.family = 4; */
 	addrsz = 2;
 #endif
 
@@ -765,9 +837,9 @@ main(void)
 		errx(EXIT_FAILURE, "http_init");
 
 #if 0
-	g = http_get(addrs, addrsz, "localhost", 80, "/index.html");
+	g = http_get(addr, waddrsz, "localhost", 80, "/index.html");
 #else
-	g = http_get(addrs, addrsz, "cryogenix.net", 80, "/index.html",
+	g = http_get(addr, addrsz, "cryogenix.net", 80, "/index.html",
 	    NULL, 0);
 #endif
 
