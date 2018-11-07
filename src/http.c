@@ -301,10 +301,10 @@ http_alloc(const char *addr,
 */
 
 	memset(&ss, 0, sizeof(struct sockaddr_storage));
-/* addr = "192.168.0.23"; */
-
+/*
 	printf("addr content: %s\n", addr);
 	printf("host content: %s\n", host);
+*/
 	family = PF_INET;
 	((struct sockaddr_in *)&ss)->sin_family = AF_INET;
 	((struct sockaddr_in *)&ss)->sin_port = htons(port);
@@ -377,7 +377,8 @@ http_alloc(const char *addr,
 			errx(1, "tls handshake failed (%s)",
 				tls_error(http->ctx));
 	} while (k == TLS_WANT_POLLIN || k == TLS_WANT_POLLOUT);
-	report_tls(http->ctx, http->host);
+
+/*	report_tls(http->ctx, http->host); */
 
 	return http;
 err:

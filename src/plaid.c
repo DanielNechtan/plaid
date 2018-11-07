@@ -42,17 +42,16 @@ static void usage()
 
 int main(int argc, char *argv[])
 {
-char *url = "", *host = "", *cafile = get_path_ca(), *path = "/";
-int i, ch, staplefd = -1, infd = -1, nonce = 1;
-http_request *request = NULL;
-size_t rescount, httphsz = 0; 
-size_t postsz;
-/* struct source addr; */
-char    *ip;
-struct httphead	*httph = NULL;
-struct httpget *hget;
-ssize_t written, w;
-short port;
+	char *url = "", *host = "", *cafile = get_path_ca(), *path = "/";
+	int i, ch, staplefd = -1, infd = -1, nonce = 1;
+	http_request *request = NULL;
+	size_t rescount, httphsz = 0; 
+	size_t postsz;
+	char    *ip;
+	struct httphead	*httph = NULL;
+	struct httpget *hget;
+	ssize_t written, w;
+	short port;
 /*	if (pledge("stdio inet rpath dns", NULL) == -1)
 		err(1, "pledge");
 */
@@ -61,30 +60,34 @@ short port;
 	if (unveil(cafile, "r") == -1)
 		err(1, "unveil");	
 */
-if(argc < 2){
-	usage();
-}
-if(argv[2])
-	url=argv[2];
+	if(argc < 2){
+		usage();
+	}
+	if(argv[2])
+		url=argv[2];
 
-printf("URL: %s\t", url);
-printf("CA: %s\n", cafile);
+	if ((host = url2host(url, &port, &path)) == NULL)
+		errx(1, "url2host failed");
+	if (*path == '\0')
+		path = "/";
+	ip = lookup_host(host);
 
-if ((host = url2host(url, &port, &path)) == NULL)
-	errx(1, "url2host failed");
-if (*path == '\0')
-	path = "/";
+	printf("Host: %s (%s)\tPort: %d\tPath: %s\n", host, ip, port, path);
 
-printf("Host: %s\tPort: %d\tPath: %s\n", host, port, path);
-
-/* ip = lookup_host(host); */
-ip = lookup_host(host);
-	printf("IP: %s\n", ip);
 /*		hget = http_get(sources, rescount, host, port, path,
 		    request->body, postsz);
 */
-		hget = http_get(ip, host, port, path);
-		if (hget == NULL)
-			errx(1, "http_get");
-		free(ip);
+	hget = http_get(ip, host, port, path);
+	if (hget == NULL)
+		errx(1, "http_get");
+/*	free(ip); */
+	printf("Server at %s returns:\n", host);
+	for (i = 0; i < httphsz; i++)
+		printf("[%s]=[%s]\n", httph[i].key, httph[i].val);
+	printf("	  [Body]=[%zu bytes]\n", hget->bodypartsz);
+/*	printf("Body: %s\n", hget->bodypart); */
+	if (hget->bodypartsz <= 0)
+			errx(1, "No body in reply from %s", host);
+	if (hget->code != 200)
+			errx(1, "http reply code %d from %s", hget->code, host);
 }

@@ -17,9 +17,6 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-/* extern char *ipad; */
-/* extern char *addr; */
-/* extern char *ip; */
 extern char* lookup_host(const char *);
 extern char* url2host(const char *host, short *port, char **path);
 
