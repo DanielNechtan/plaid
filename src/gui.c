@@ -70,7 +70,9 @@ gui_init(char *htfile)
 	}
 	int screen = DefaultScreen(display);
 	Font font;
-	font = XLoadFont(display, "6x9");
+/*	font = XLoadFont(display, "6x9"); */
+	font = XLoadFont(display, 
+		"-misc-dejavu sans-*-r-*-*-*-*-100-100-*-*-*-uni");
 	GC gc = DefaultGC(display, screen);
 	XSetFont(display, gc, font);
 	Window parent_window = DefaultRootWindow(display);
@@ -169,7 +171,7 @@ gui_init(char *htfile)
 			/* *pos = '\0'; */
 				XDrawString(display, main_window, 
 				 gc, 10, y, contents[i], strlen(contents[i]));
-				 y = y+10;
+				 y = y+20;
 			}
         	}
 
