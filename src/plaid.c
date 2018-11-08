@@ -33,6 +33,7 @@
 
 #include "http.h"
 #include "util.h"
+#include "gui.h"
 
 static void usage()
 {
@@ -71,9 +72,6 @@ int main(int argc, char *argv[])
 	if (*path == '\0')
 		path = "/";
 
-/*	char *upath; */
-/*	memcpy(upath, path, strlen(path+1)); */
-/*	printf("Path: %s", upath); */
 	ip = lookup_host(host);
 	printf("Host: %s (%s)\tPort: %d\tPath: %s\n", host, ip, port, path);
 
@@ -88,10 +86,16 @@ int main(int argc, char *argv[])
 	for (i = 0; i < httphsz; i++)
 		printf("[%s]=[%s]\n", httph[i].key, httph[i].val);
 	printf("	  [Body]=[%zu bytes]\n", hget->bodypartsz);
-	printf("Body: %s\n", hget->bodypart); 
+/*	printf("Body: %s\n", hget->bodypart); */
+   	FILE * fp;
+	fp = fopen ("index.html", "w+");
+   	fprintf(fp, "%s", hget->bodypart);
+	fclose(fp); 
 	if (hget->bodypartsz <= 0)
 			errx(1, "No body in reply from %s", host);
 	if (hget->code != 200)
 			errx(1, "http reply code %d from %s", hget->code, host);
 
+	char *htfile = "index.html";
+	gui_init(htfile);
 }

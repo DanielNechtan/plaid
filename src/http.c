@@ -378,7 +378,7 @@ http_alloc(const char *addr,
 				tls_error(http->ctx));
 	} while (k == TLS_WANT_POLLIN || k == TLS_WANT_POLLOUT);
 
-/*	report_tls(http->ctx, http->host); */
+	report_tls(http->ctx, http->host); 
 
 	return http;
 err:
