@@ -35,24 +35,26 @@
 #include "util.h"
 #include "gui.h"
 
-static void usage()
+static void
+usage()
 {
 	fprintf(stderr, "usage: %s [-u url]\n", getprogname()); 
 	exit(1);
 }
 
-int main(int argc, char *argv[])
+int 
+main(int argc, char *argv[])
 {
-	char *url = "", *host = "", *path = "/";
-/*	char *cafile = get_path_ca(); */
-/*	int i; */
-	size_t i;
-/*	http_request *request = NULL; */
-	size_t httphsz = 0; 
-	char    *ip;
-	struct httphead	*httph = NULL;
-	struct httpget *hget;
-	short port;
+	char	 *url = "", *host = "", *path = "/";
+/*	char	 *cafile = get_path_ca(); */
+	char	 *ip;
+	size_t	 i;
+	size_t	 httphsz = 0; 
+	short	 port;
+	
+	struct	 httphead *httph = NULL;
+	struct	 httpget *hget;
+
 /*	if (pledge("stdio getpw inet rpath tmppath dns unix unveil", NULL) == -1)
 		err(1, "pledge");
 */
@@ -75,41 +77,40 @@ int main(int argc, char *argv[])
 	ip = lookup_host(host);
 	printf("Host: %s (%s)\tPort: %d\tPath: %s\n", host, ip, port, path);
 
-/*		hget = http_get(sources, rescount, host, port, upath,
-		    request->body, postsz);
-*/
 	hget = http_get(ip, host, port, path);
+
 	if (hget == NULL)
 		errx(1, "http_get");
-/*	free(ip); */
 	printf("Server at %s returns:\n", host);
 	for (i = 0; i < httphsz; i++)
 		printf("[%s]=[%s]\n", httph[i].key, httph[i].val);
 	printf("	  [Body]=[%zu bytes]\n", hget->bodypartsz);
 /*	printf("Body: %s\n", hget->bodypart); */
 
-char sfn[22]; 
-FILE * sfp;
-int fd;
-strlcpy(sfn, "/tmp/plaid.XXXXXXXXXX", sizeof(sfn)); 
-if ((fd = mkstemp(sfn)) == -1 || 
-    (sfp = fdopen(fd, "w+")) == NULL) { 
-	if (fd != -1) {
-		unlink(sfn); 
-		close(fd);
-	}
-	warn("%s", sfn); 
-	return (NULL); 
-    }  
-        fprintf(sfp, "%s", hget->bodypart);
-        fclose(sfp);
+	char sfn[22]; 
+	FILE * sfp;
+	int fd;
+	strlcpy(sfn, "/tmp/plaid.XXXXXXXXXX", sizeof(sfn)); 
 
-printf("sfn: %s\n", sfn);
-	if (hget->bodypartsz <= 0)
+	if ((fd = mkstemp(sfn)) == -1 || 
+		(sfp = fdopen(fd, "w+")) == NULL) { 
+		if (fd != -1) {
+			unlink(sfn); 
+			close(fd);
+		}
+		warn("%s", sfn);
+	}
+
+	fprintf(sfp, "%s", hget->bodypart);
+	fclose(sfp);
+
+	printf("sfn: %s\n", sfn);
+		if (hget->bodypartsz <= 0)
 			errx(1, "No body in reply from %s", host);
-	if (hget->code != 200)
+		if (hget->code != 200)
 			errx(1, "http reply code %d from %s", hget->code, host);
 
-//	char *htfile = "/tmp/plaid.html";
+	/*	char *htfile = "/tmp/plaid.html"; */
+
 	gui_init(sfn);
 }
