@@ -80,7 +80,7 @@ main(int argc, char *argv[])
 		errx(1, "gethostbyname");
 	ip = inet_ntoa( *( struct in_addr*)( hp -> h_addr_list[0]));
 
-	printf("Host: %s (%s)\tPort: %d\tPath: %s\n", host, ip, port, path);
+WHGET:	printf("Host: %s (%s)\tPort: %d\tPath: %s\n", host, ip, port, path);
 
 	hget = http_get(ip, host, port, path);
 
@@ -91,7 +91,7 @@ main(int argc, char *argv[])
 		printf("[%s]=[%s]\n", httph[i].key, httph[i].val);
 	printf("	  [Body]=[%zu bytes]\n", hget->bodypartsz);
 /*	printf("Body: %s\n", hget->bodypart); */
-
+	printf("Body: %s\n", hget->headpart); 
 	char sfn[22]; 
 	FILE * sfp;
 	int fd;
@@ -112,9 +112,16 @@ main(int argc, char *argv[])
 	printf("sfn: %s\n", sfn);
 		if (hget->bodypartsz <= 0)
 			errx(1, "No body in reply from %s", host);
-		if (hget->code != 200)
-			errx(1, "http reply code %d from %s", hget->code, host);
-
+		if (hget->code != 200) {
+			if(hget->code == 301) {
+				printf("redirecting...");
+				port = 443;
+				goto WHGET;
+			}else{
+				errx(1, "%d from %s", hget->code, host);
+			}
+		}
+	
 	/*	char *htfile = "/tmp/plaid.html"; */
 
 	gui_init(sfn);
