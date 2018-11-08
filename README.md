@@ -23,4 +23,5 @@ Current state:
 - Messy
 
 cd src && make
+
 ./plaid -u https://cryogenix.net
