@@ -131,7 +131,7 @@ do {
         getline(&contents[i], &len, fp);
     }
     fclose(fp);
-   printf("%.12s\n",htfile);
+//   printf("%.12s\n",htfile);
     printf("number of lines: %d\n", lines);
 //    printf("first: %s\n", contents[0]);
 //    printf("last: %s\n", contents[lines-1]);
@@ -158,8 +158,13 @@ do {
         if (event.type == KeyPress || event.type == Expose) {
 
     int y = 20;
+    char *pos;
     for(i = 0; i < lines; i++)
     {
+	if ((pos=strchr(contents[i], '\n')) != NULL)
+		contents[i][strlen(contents[i])-1] = 0;
+	    /* *pos = '\0'; */
+	
       XDrawString(display, main_window, gc, 10, y, contents[i], strlen(contents[i])); 
       y = y+10;
     }
