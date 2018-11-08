@@ -46,7 +46,7 @@ int
 main(int argc, char *argv[])
 {
 	char	 *url = "", *host = "", *path = "/";
-/*	char	 *cafile = get_path_ca(); */
+	char	 *cafile = get_path_ca();
 	char	 *ip;
 	size_t	 i;
 	size_t	 httphsz = 0; 
@@ -54,6 +54,7 @@ main(int argc, char *argv[])
 	
 	struct	 httphead *httph = NULL;
 	struct	 httpget *hget;
+	struct	 hostent *hp;
 
 /*	if (pledge("stdio getpw inet rpath tmppath dns unix unveil", NULL) == -1)
 		err(1, "pledge");
@@ -74,7 +75,11 @@ main(int argc, char *argv[])
 	if (*path == '\0')
 		path = "/";
 
-	ip = lookup_host(host);
+	hp = gethostbyname(host);
+	if (hp == NULL)
+		errx(1, "gethostbyname");
+	ip = inet_ntoa( *( struct in_addr*)( hp -> h_addr_list[0]));
+
 	printf("Host: %s (%s)\tPort: %d\tPath: %s\n", host, ip, port, path);
 
 	hget = http_get(ip, host, port, path);

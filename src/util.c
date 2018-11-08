@@ -31,44 +31,6 @@
 #include <unistd.h>
 
 char *
-lookup_host (const char *lhost)
-{
-  struct addrinfo hints, *res;
-  int errcode;
-  char addrstr[100];
-  void *ptr;
-
-  memset (&hints, 0, sizeof (hints));
-  hints.ai_family = PF_UNSPEC;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags |= AI_CANONNAME;
-
-  errcode = getaddrinfo(lhost, NULL, &hints, &res);
-  if (errcode != 0)
-    {
-      warn("getaddrinfo");
-      return NULL;
-    }
-
-      inet_ntop (res->ai_family, res->ai_addr->sa_data, addrstr, 100);
-
-      switch (res->ai_family)
-        {
-        case AF_INET:
-          ptr = &((struct sockaddr_in *) res->ai_addr)->sin_addr;
-          break;
-        case AF_INET6:
-          ptr = &((struct sockaddr_in6 *) res->ai_addr)->sin6_addr;
-          break;
-        }
-      inet_ntop (res->ai_family, ptr, addrstr, 100);
-char *ipad;
-
- memcpy(ipad, addrstr, strlen(addrstr+1)); 
-  return ipad;
-}
-
-char *
 url2host(const char *host, short *port, char **path)
 {
         char    *url, *ep;
