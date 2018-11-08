@@ -35,6 +35,21 @@
 #include "util.h"
 #include "gui.h"
 
+char	*url = "", *host = "", *path = "/";
+char	*ip;
+char	sfn[22];
+
+int	fd;
+size_t	i;
+size_t	httphsz = 0;
+short	port;
+
+FILE * sfp;
+
+struct	httphead *httph = NULL;
+struct	httpget *hget;
+struct	hostent *hp;
+
 static void
 usage()
 {
@@ -42,19 +57,61 @@ usage()
 	exit(1);
 }
 
+static void
+plaid_host(char *url)
+{
+	if ((host = url2host(url, &port, &path)) == NULL)
+		errx(1, "url2host failed");
+	if (*path == '\0')
+		path = "/";
+	hp = gethostbyname(host);
+	if (hp == NULL)
+		errx(1, "gethostbyname");
+	ip = inet_ntoa( *( struct in_addr*)( hp -> h_addr_list[0]));
+	printf("Host: %s (%s)\tPort: %d\tPath: %s\n", host, ip, port, path);
+}
+
+static void
+plaid_http(char *host, char *ip, short *port, char *path)
+{
+        hget = http_get(ip, host, port, path);
+        if (hget == NULL)
+                errx(1, "http_get");
+        printf("Server at %s returns:\n", host);
+        for (i = 0; i < httphsz; i++)
+/*                printf("[%s]=[%s]\n", httph[i].key, httph[i].val); */
+        printf("BodySz: [%zu bytes]\n", hget->bodypartsz);
+/*      printf("Body: %s\n", hget->bodypart); */
+/*      printf("Body: %s\n", hget->headpart); */
+
+}
+
+static void
+plaid_body()
+{
+	if (hget->bodypartsz <= 0)
+		errx(1, "No body in reply from %s", host);
+        strlcpy(sfn, "/tmp/plaid.XXXXXXXXXX", sizeof(sfn));
+
+        if ((fd = mkstemp(sfn)) == -1 ||
+                (sfp = fdopen(fd, "w+")) == NULL) {
+                if (fd != -1) {
+                        unlink(sfn);
+                        close(fd);
+                }
+                warn("%s", sfn);
+        }
+
+        fprintf(sfp, "%s", hget->bodypart);
+        fclose(sfp);
+
+        printf("sfn: %s\n", sfn);
+}
+
 int 
 main(int argc, char *argv[])
 {
-	char	 *url = "", *host = "", *path = "/";
 	char	 *cafile = get_path_ca();
-	char	 *ip;
-	size_t	 i;
-	size_t	 httphsz = 0; 
-	short	 port;
-	
-	struct	 httphead *httph = NULL;
-	struct	 httpget *hget;
-	struct	 hostent *hp;
 
 /*	if (pledge("stdio getpw inet rpath tmppath dns unix unveil", NULL) == -1)
 		err(1, "pledge");
@@ -69,60 +126,27 @@ main(int argc, char *argv[])
 	}
 	if(argv[2])
 		url=argv[2];
-
-	if ((host = url2host(url, &port, &path)) == NULL)
-		errx(1, "url2host failed");
-	if (*path == '\0')
-		path = "/";
-
-	hp = gethostbyname(host);
-	if (hp == NULL)
-		errx(1, "gethostbyname");
-	ip = inet_ntoa( *( struct in_addr*)( hp -> h_addr_list[0]));
-
-WHGET:	printf("Host: %s (%s)\tPort: %d\tPath: %s\n", host, ip, port, path);
-
-	hget = http_get(ip, host, port, path);
-
-	if (hget == NULL)
-		errx(1, "http_get");
-	printf("Server at %s returns:\n", host);
-	for (i = 0; i < httphsz; i++)
-		printf("[%s]=[%s]\n", httph[i].key, httph[i].val);
-	printf("	  [Body]=[%zu bytes]\n", hget->bodypartsz);
-/*	printf("Body: %s\n", hget->bodypart); */
-	printf("Body: %s\n", hget->headpart); 
-	char sfn[22]; 
-	FILE * sfp;
-	int fd;
-	strlcpy(sfn, "/tmp/plaid.XXXXXXXXXX", sizeof(sfn)); 
-
-	if ((fd = mkstemp(sfn)) == -1 || 
-		(sfp = fdopen(fd, "w+")) == NULL) { 
-		if (fd != -1) {
-			unlink(sfn); 
-			close(fd);
-		}
-		warn("%s", sfn);
-	}
-
-	fprintf(sfp, "%s", hget->bodypart);
-	fclose(sfp);
-
-	printf("sfn: %s\n", sfn);
-		if (hget->bodypartsz <= 0)
-			errx(1, "No body in reply from %s", host);
-		if (hget->code != 200) {
-			if(hget->code == 301) {
-				printf("redirecting...");
-				port = 443;
-				goto WHGET;
-			}else{
-				errx(1, "%d from %s", hget->code, host);
-			}
-		}
 	
-	/*	char *htfile = "/tmp/plaid.html"; */
+	plaid_host(url);
+	plaid_http(host, ip, port, path);
+                if (hget->code != 200) {
+                        if(hget->code == 301) {
+                                size_t   i;
+                                char *v = "Location";
+                                for (i = 0; i < hget->headsz; i++) {
+                                        if (!strcmp(hget->head[i].key, v))
+                                        {
+                                         printf("redirecting to: %s\n",
+                                                hget->head[i].val);
+                                         plaid_host(hget->head[i].val);
+                                         plaid_http(host, ip, port, path);
+                                        }
+                                }
+                        }else{
+                                errx(1, "%d from %s", hget->code, host);
+                        }
+                }
 
+	plaid_body();
 	gui_init(sfn);
 }
