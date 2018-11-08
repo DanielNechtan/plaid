@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 	struct httphead	*httph = NULL;
 	struct httpget *hget;
 	short port;
-/*	if (pledge("stdio inet rpath dns", NULL) == -1)
+/*	if (pledge("stdio getpw inet rpath tmppath dns unix unveil", NULL) == -1)
 		err(1, "pledge");
 */
 /*	if (unveil("/tmp", "w") == -1)
@@ -87,15 +87,29 @@ int main(int argc, char *argv[])
 		printf("[%s]=[%s]\n", httph[i].key, httph[i].val);
 	printf("	  [Body]=[%zu bytes]\n", hget->bodypartsz);
 /*	printf("Body: %s\n", hget->bodypart); */
-   	FILE * fp;
-	fp = fopen ("index.html", "w+");
-   	fprintf(fp, "%s", hget->bodypart);
-	fclose(fp); 
+
+char sfn[22]; 
+FILE * sfp;
+int fd;
+strlcpy(sfn, "/tmp/plaid.XXXXXXXXXX", sizeof(sfn)); 
+if ((fd = mkstemp(sfn)) == -1 || 
+    (sfp = fdopen(fd, "w+")) == NULL) { 
+	if (fd != -1) {
+		unlink(sfn); 
+		close(fd);
+	}
+	warn("%s", sfn); 
+	return (NULL); 
+    }  
+        fprintf(sfp, "%s", hget->bodypart);
+        fclose(sfp);
+
+printf("sfn: %s\n", sfn);
 	if (hget->bodypartsz <= 0)
 			errx(1, "No body in reply from %s", host);
 	if (hget->code != 200)
 			errx(1, "http reply code %d from %s", hget->code, host);
 
-	char *htfile = "index.html";
-	gui_init(htfile);
+//	char *htfile = "/tmp/plaid.html";
+	gui_init(sfn);
 }
