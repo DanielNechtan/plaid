@@ -64,121 +64,123 @@ static const char *event_names[] = {
 extern char
 gui_init(char *htfile)
 {
-    Display* display = XOpenDisplay(NULL);
-    if (display == NULL) {
-        return 1;
-    }
-    int screen = DefaultScreen(display);
+	Display* display = XOpenDisplay(NULL);
+	if (display == NULL) {
+		return 1;
+	}
+	int screen = DefaultScreen(display);
+	Font font;
+	font = XLoadFont(display, "6x9");
+	GC gc = DefaultGC(display, screen);
+	XSetFont(display, gc, font);
+	Window parent_window = DefaultRootWindow(display);
 
-    GC gc = DefaultGC(display, screen);
+	int x = 0;
+	int y = 0;
 
-    Window parent_window = DefaultRootWindow(display);
+	unsigned int width = 1024;
+	unsigned int height = 600;
+	unsigned int border_width = 1;
+	unsigned int border_color = BlackPixel(display, screen);
+	unsigned int background_color = WhitePixel(display, screen);
 
-    int x = 0;
-    int y = 0;
+	Window main_window = XCreateSimpleWindow(display, parent_window,
+		x,
+		y,
+		width,
+		height,
+		border_width,
+		border_color,
+		background_color);
 
-    unsigned int width = 1024;
-    unsigned int height = 600;
+	long event_mask = ExposureMask
+		| KeyPressMask
+		| KeyReleaseMask
+		| ButtonPressMask
+		| ButtonReleaseMask
+		| FocusChangeMask
+		;
 
-    unsigned int border_width = 1;
+	XSelectInput(display, main_window, event_mask);
+	XMapWindow(display, main_window);
+	XStoreName(display, main_window, "Welcome to plaid");
+	Atom wm_delete = XInternAtom(display, "WM_DELETE_WINDOW", True);
+	XSetWMProtocols(display, main_window, &wm_delete, 1);
 
-    unsigned int border_color = BlackPixel(display, screen);
-    unsigned int background_color = WhitePixel(display, screen);
+	char msg[1024] = "";
+	char key[32];
 
-    Window main_window = XCreateSimpleWindow(display, parent_window,
-                                              x,
-                                              y,
-                                              width,
-                                              height,
-                                              border_width,
-                                              border_color,
-                                              background_color);
+	int ch, lines = 0;
+	FILE *fp;
+	fp = fopen(htfile, "r");
 
-    long event_mask = ExposureMask
-                    | KeyPressMask
-                    | KeyReleaseMask
-                    | ButtonPressMask
-                    | ButtonReleaseMask
-                    | FocusChangeMask
-                    ;
+	do {
+		ch = fgetc(fp);
+		if (ch == '\n')
+			lines++;
+	} while (ch != EOF);
 
-    XSelectInput(display, main_window, event_mask);
-    XMapWindow(display, main_window);
-    XStoreName(display, main_window, "Welcome to plaid");
-    Atom wm_delete = XInternAtom(display, "WM_DELETE_WINDOW", True);
-    XSetWMProtocols(display, main_window, &wm_delete, 1);
-
-    char msg[1024] = "";
-    char key[32];
-
-    int ch, lines = 0;
-/*    char *txt; */
-    FILE *fp;
-    fp = fopen(htfile, "r");
-
-do {
-        ch = fgetc(fp);
-        if (ch == '\n')
-            lines++;
-    } while (ch != EOF);
-           rewind(fp);
-    char *contents[lines];
-    int i = 0;
-    size_t len = 0;
-    for (i = 0; i < lines; i++)
-    {
-        contents[i] = NULL;
-        len = 0;
-        getline(&contents[i], &len, fp);
-    }
-    fclose(fp);
-/*   printf("%.12s\n",htfile); */
-    printf("number of lines: %d\n", lines);
-/*    printf("first: %s\n", contents[0]); */
-/*    printf("last: %s\n", contents[lines-1]); */
-    /* Event loop */
-    for (;;) {
-        /* Get next event from queue */
-        XEvent event;
-        XNextEvent(display, &event);
-
-/*        printf("got event: %s\n", event_names[event.type]); */
-
-        if (event.type == KeyPress) {
-            int len = XLookupString(&event.xkey, key, sizeof(key) - 1, 0, 0);
-            key[len] = 0;
-
-            if (strlen(msg) > 50)
-                msg[0] = 0;
-        }
+	rewind(fp);
+	char *contents[lines];
+	int i = 0;
+	size_t len = 0;
 	
-	if (event.type == ButtonPress) {
-
+	for (i = 0; i < lines; i++)
+	{
+		contents[i] = NULL;
+		len = 0;
+		getline(&contents[i], &len, fp);
 	}
 
-        if (event.type == KeyPress || event.type == Expose) {
+	fclose(fp);
 
-    int y = 20;
-    char *pos;
-    for (i = 0; i < lines; i++)
-    {
-	if ((pos=strchr(contents[i], '\n')) != NULL)
-		contents[i][strlen(contents[i])-1] = 0;
-	    /* *pos = '\0'; */
-	
-      XDrawString(display, main_window, gc, 10, y, contents[i], strlen(contents[i])); 
-      y = y+10;
-    }
-        }
+	/* printf("%.12s\n",htfile); */
+	printf("number of lines: %d\n", lines);
+/*	printf("first: %s\n", contents[0]); */
+/*	printf("last: %s\n", contents[lines-1]); */
 
-        /* Close button */
-        if (event.type == ClientMessage) {
-            if (event.xclient.data.l[0] == wm_delete) {
-                break;
-            }
-        }
-    }
+    /* Event loop */
+	for (;;) {
+	/* Get next event from queue */
+		XEvent event;
+		XNextEvent(display, &event);
 
-    XCloseDisplay(display);
-    return 0;
+		/* printf("got event: %s\n", event_names[event.type]); */
+
+		if (event.type == KeyPress) {
+			int len = XLookupString(&event.xkey,
+				key, sizeof(key) - 1, 0, 0);
+			key[len] = 0;
+
+			if (strlen(msg) > 50)
+				msg[0] = 0;
+		}
+
+		if (event.type == ButtonPress) {
+
+		}
+
+		if (event.type == KeyPress || event.type == Expose) {
+			int y = 20;
+			char *pos;
+			for (i = 0; i < lines; i++) {
+			 if ((pos=strchr(contents[i], '\n')) != NULL)
+			 	contents[i][strlen(contents[i])-1] = 0;
+			/* *pos = '\0'; */
+				XDrawString(display, main_window, 
+				 gc, 10, y, contents[i], strlen(contents[i]));
+				 y = y+10;
+			}
+        	}
+
+		/* Close button */
+		if (event.type == ClientMessage) {
+			if (event.xclient.data.l[0] == wm_delete) {
+				break;
+			}
+		}
+    	}
+
+	XCloseDisplay(display);
+	return 0;
 }
