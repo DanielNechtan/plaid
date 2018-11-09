@@ -17,6 +17,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+void tinfoilhat();
+
 extern char* upath;
 extern char* lookup_host(const char *);
 extern char* url2host(const char *host, short *port, char **path);

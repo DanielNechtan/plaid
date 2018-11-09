@@ -118,46 +118,8 @@ plaid_body()
 		errx(1, "fprintf: %d chars written", p);
 	fclose(sfp);
 	printf("sfn: %s\n", sfn);
-gui_init(sfn);	
+// gui_init(sfn);	
 }
-
-static void
-tinfoilhat()
-{
-char     *cafile = get_path_ca();
-char    *pledgefest = "stdio rpath wpath cpath tmppath inet dns fattr \
-                flock unix getpw sendfd recvfd tty unveil error drm";
-
-/*        if (pledge(pledgefest, NULL) == -1)
-                 err(1, "pledge"); */
-        if (unveil("/tmp", "rcw") == -1)
-                err(1, "unveil");
-        if (unveil(cafile, "r") == -1)
-                err(1, "unveil");
-        if (unveil("/etc/hosts", "r") == -1)
-                err(1, "unveil");
-        if (unveil("/etc/resolv.conf", "r") == -1)
-                err(1, "unveil");
-	if (unveil("/etc/X11/xenodm", "r") == -1)
-		err(1, "unveil");
-        if (unveil("/usr/X11R6/lib", "r") == -1)
-                err(1, "unveil");
-        if (unveil("/usr/X11R6/share", "r") == -1)
-                err(1, "unveil");
-        if (unveil("/dev/null", "r") == -1)
-                err(1, "unveil");
-	if (unveil("/tmp/.X11-unix", "rw") == -1)
-		err(1, "unveil");
-	if (unveil("/tmp/.X11-unix/X0", "rw") == -1)
-		err(1, "unveil");
-        if (unveil("/tmp/.ICE-unix", "rw") == -1)
-                err(1, "unveil");
-        if (unveil("/usr/local/share", "r") == -1)
-                err(1, "unveil");
-        if (unveil("/usr/local/lib", "r") == -1)
-                err(1, "unveil");
-}
-
 
 int 
 main(int argc, char *argv[])
@@ -190,5 +152,5 @@ main(int argc, char *argv[])
                 }
 
 	plaid_body();
-//	extern gui_init(sfn);
+	gui_init(sfn);
 }

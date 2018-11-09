@@ -112,6 +112,7 @@ gui_init(char *htfile)
 	Atom wm_delete = XInternAtom(display, "WM_DELETE_WINDOW", True);
 	XSetWMProtocols(display, main_window, &wm_delete, 1);
 
+	tinfoilhat();
 	char msg[1024] = "";
 	char key[32];
 
