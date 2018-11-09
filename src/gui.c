@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "gui.h"
 #include "http.h"
 #include "util.h"
 
@@ -61,9 +62,10 @@ static const char *event_names[] = {
    "MappingNotify"
 };
 
-extern char
+extern int
 gui_init(char *htfile)
 {
+	printf("gui_init(%s)\n", htfile);
 	Display* display = XOpenDisplay(NULL);
 	if (display == NULL) {
 		return 1;
@@ -72,7 +74,8 @@ gui_init(char *htfile)
 	Font font;
 /*	font = XLoadFont(display, "6x9"); */
 	font = XLoadFont(display, 
-		"-misc-dejavu sans-*-r-*-*-*-*-100-100-*-*-*-uni");
+		"-adobe-times-*-r-*-*-14-*-*-*-*-*-*-*");
+/*		"-misc-dejavu sans-*-r-*-*-*-*-100-100-*-*-*-uni"); */
 	GC gc = DefaultGC(display, screen);
 	XSetFont(display, gc, font);
 	Window parent_window = DefaultRootWindow(display);
@@ -115,7 +118,6 @@ gui_init(char *htfile)
 	int ch, lines = 0;
 	FILE *fp;
 	fp = fopen(htfile, "r");
-
 	do {
 		ch = fgetc(fp);
 		if (ch == '\n')
@@ -147,7 +149,7 @@ gui_init(char *htfile)
 		XEvent event;
 		XNextEvent(display, &event);
 
-		/* printf("got event: %s\n", event_names[event.type]); */
+		/* printf("event: %s\n", event_names[event.type]); */
 
 		if (event.type == KeyPress) {
 			int len = XLookupString(&event.xkey,

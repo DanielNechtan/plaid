@@ -16,6 +16,4 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-int gui_init(char *);
-
 #endif /* UTIL_H */

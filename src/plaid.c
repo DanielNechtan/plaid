@@ -35,14 +35,17 @@
 #include "util.h"
 #include "gui.h"
 
+/* #define DIR_MODE	(S_IRUSR | S_IWUSR | S_IXUSR | 
+	S_IRGRP | S_IWGRP | S_IXGRP) */
+
 char	*url = "", *host = "", *path = "/";
 char	*ip;
-char	sfn[22];
+char	sfn[28];
 
 int	fd;
 size_t	i;
 size_t	httphsz = 0;
-short	port;
+short	*port;
 
 FILE * sfp;
 
@@ -74,53 +77,92 @@ plaid_host(char *url)
 static void
 plaid_http(char *host, char *ip, short *port, char *path)
 {
-        hget = http_get(ip, host, port, path);
-        if (hget == NULL)
-                errx(1, "http_get");
-        printf("Server at %s returns:\n", host);
-        for (i = 0; i < httphsz; i++)
-/*                printf("[%s]=[%s]\n", httph[i].key, httph[i].val); */
-        printf("BodySz: [%zu bytes]\n", hget->bodypartsz);
+	hget = http_get(ip, host, port, path);
+	if (hget == NULL)
+		errx(1, "http_get");
+	printf("Server at %s returns:\n", host);
+	for (i = 0; i < httphsz; i++)
+                printf("[%s]=[%s]\n", httph[i].key, httph[i].val); 
+	printf("BodySz: [%zu bytes]\n", hget->bodypartsz);
 /*      printf("Body: %s\n", hget->bodypart); */
 /*      printf("Body: %s\n", hget->headpart); */
-
+	return;
 }
 
 static void
 plaid_body()
 {
+	int n;
+	int p;
 	if (hget->bodypartsz <= 0)
 		errx(1, "No body in reply from %s", host);
-        strlcpy(sfn, "/tmp/plaid.XXXXXXXXXX", sizeof(sfn));
+/*	mkdir("/tmp/plaid", DIR_MODE); */
 
-        if ((fd = mkstemp(sfn)) == -1 ||
-                (sfp = fdopen(fd, "w+")) == NULL) {
-                if (fd != -1) {
-                        unlink(sfn);
-                        close(fd);
-                }
+	if(n = (strlcpy(sfn, "/tmp/plaid.XXXXXXXXXX", sizeof(sfn)) == NULL))
+		errx(1, "strlcpy");
+
+//	strlcpy(sfn, "/tmp/plaid.XXXXXXXXXX", sizeof(sfn));
+/*        if (unveil(sfn, "rcw") == -1)
+ *               err(1, "unveil");
+ */	
+
+	if ((fd = mkstemp(sfn)) == -1 || 
+		(sfp = fdopen(fd, "w+")) == NULL) {
+		if (fd != -1) {
+			unlink(sfn);
+			close(fd);
+		}
                 warn("%s", sfn);
-        }
-
-        fprintf(sfp, "%s", hget->bodypart);
-        fclose(sfp);
-
-        printf("sfn: %s\n", sfn);
+	}
+	if(p = fprintf(sfp, "%s", hget->bodypart) == -1)
+		errx(1, "fprintf: %d chars written", p);
+	fclose(sfp);
+	printf("sfn: %s\n", sfn);
+gui_init(sfn);	
 }
+
+static void
+tinfoilhat()
+{
+char     *cafile = get_path_ca();
+char    *pledgefest = "stdio rpath wpath cpath tmppath inet dns fattr \
+                flock unix getpw sendfd recvfd tty unveil error drm";
+
+/*        if (pledge(pledgefest, NULL) == -1)
+                 err(1, "pledge"); */
+        if (unveil("/tmp", "rcw") == -1)
+                err(1, "unveil");
+        if (unveil(cafile, "r") == -1)
+                err(1, "unveil");
+        if (unveil("/etc/hosts", "r") == -1)
+                err(1, "unveil");
+        if (unveil("/etc/resolv.conf", "r") == -1)
+                err(1, "unveil");
+	if (unveil("/etc/X11/xenodm", "r") == -1)
+		err(1, "unveil");
+        if (unveil("/usr/X11R6/lib", "r") == -1)
+                err(1, "unveil");
+        if (unveil("/usr/X11R6/share", "r") == -1)
+                err(1, "unveil");
+        if (unveil("/dev/null", "r") == -1)
+                err(1, "unveil");
+	if (unveil("/tmp/.X11-unix", "rw") == -1)
+		err(1, "unveil");
+	if (unveil("/tmp/.X11-unix/X0", "rw") == -1)
+		err(1, "unveil");
+        if (unveil("/tmp/.ICE-unix", "rw") == -1)
+                err(1, "unveil");
+        if (unveil("/usr/local/share", "r") == -1)
+                err(1, "unveil");
+        if (unveil("/usr/local/lib", "r") == -1)
+                err(1, "unveil");
+}
+
 
 int 
 main(int argc, char *argv[])
 {
-	char	 *cafile = get_path_ca();
-
-/*	if (pledge("stdio getpw inet rpath tmppath dns unix unveil", NULL) == -1)
-		err(1, "pledge");
-*/
-/*	if (unveil("/tmp", "w") == -1)
-		err(1, "unveil");
-	if (unveil(cafile, "r") == -1)
-		err(1, "unveil");	
-*/
+	/* tinfoilhat(); */
 	if(argc < 2){
 		usage();
 	}
@@ -148,5 +190,5 @@ main(int argc, char *argv[])
                 }
 
 	plaid_body();
-	gui_init(sfn);
+//	extern gui_init(sfn);
 }

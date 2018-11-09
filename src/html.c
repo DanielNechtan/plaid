@@ -13,9 +13,14 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
-#ifndef UTIL_H
-#define UTIL_H
 
-int gui_init(char *);
+char *HTMLSrc;
 
-#endif /* UTIL_H */
+struct html_text {
+	char	*htsrc;
+	char	*hthead;
+	int	htalloc;
+	int	htsz;
+};
+
+html_text* HTMLBody = 0;   

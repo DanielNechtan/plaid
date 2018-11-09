@@ -1,0 +1,3 @@
+argpe_html.o: ../lib/argpe/src/argpe_html.c ../lib/argpe/src/argpe_html_api.c ../lib/argpe/lib/argpe_common.c
+        gcc -o argpe_html.o ../lib/argpe/src/argpe_html.c ../lib/argpe/src/argpe_html_api.c ../lib/argpe/lib/argpe_common.c -c 
+$(CFLAGS)
