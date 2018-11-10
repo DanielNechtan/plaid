@@ -35,7 +35,6 @@
 #include "util.h"
 #include "gui.h"
 
-extern int stripHTMLTags(char *, size_t);
 extern void gui_init();
 
 /* #define DIR_MODE	(S_IRUSR | S_IWUSR | S_IXUSR | 
@@ -91,7 +90,6 @@ plaid_http(char *host, char *ip, short *port, char *path)
 
 /* printf("Body: %s\n", nhtml); */
 
-/* int htconv = stripHTMLTags(nhtml, strlen(nhtml)); */
 
 /*
  * nhtml = malloc(hget->bodypartsz+1)
@@ -101,7 +99,6 @@ plaid_http(char *host, char *ip, short *port, char *path)
 
 /* printf("Body: %s\n", nhtml); */
 /*  printf("htconv: %s\n", htconv); */
-/*      printf("Body: %s\n", stripHTMLTags(hget->bodypart, hget->bodypartsz)); */
 /*      printf("Body: %s\n", hget->bodypart); */
 /*      printf("Body: %s\n", hget->headpart); */
 
@@ -142,7 +139,6 @@ plaid_body()
 
 	nhtml = malloc(hget->bodypartsz+1);
 	strlcpy(nhtml, hget->bodypart, hget->bodypartsz);
-/*	int htconva = stripHTMLTags(nhtml, strlen(nhtml)); */
 	int htconv = tidyhtml(nhtml, sfn);
 	printf("sfn: %s\n", sfn);
 }
