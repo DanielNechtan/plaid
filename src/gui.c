@@ -19,6 +19,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "gui.h"
 #include "http.h"
@@ -116,6 +117,7 @@ gui_init(char *htfile)
 	char msg[1024] = "";
 	char key[32];
 
+
 	int ch, lines = 0;
 	FILE *fp;
 	fp = fopen(htfile, "r");
@@ -139,8 +141,21 @@ gui_init(char *htfile)
 
 	fclose(fp);
 
+/*
+FILE *fp = fopen(htfile, "rb");
+fseek(fp, 0, SEEK_END);
+long fsize = ftell(fp);
+fseek(fp, 0, SEEK_SET);  //same as rewind(f);
+char *nhtml = malloc(fsize + 1);
+fread(nhtml, fsize, 1, fp);
+fclose(fp);
+nhtml[fsize] = 0;
+char *cleanhtml = stripHTMLTags(nhtml, sizeof(nhtml));
+printf("HTML: %s\n", nhtml[1]);
+printf("HTML: %s", &cleanhtml);
+*/
 	/* printf("%.12s\n",htfile); */
-	printf("number of lines: %d\n", lines);
+/*	printf("number of lines: %d\n", lines);*/
 /*	printf("first: %s\n", contents[0]); */
 /*	printf("last: %s\n", contents[lines-1]); */
 
@@ -166,16 +181,27 @@ gui_init(char *htfile)
 		}
 
 		if (event.type == KeyPress || event.type == Expose) {
+		/*	printf("keypress\n"); */
 			int y = 20;
 			char *pos;
 			for (i = 0; i < lines; i++) {
 			 if ((pos=strchr(contents[i], '\n')) != NULL)
 			 	contents[i][strlen(contents[i])-1] = 0;
-			/* *pos = '\0'; */
-				XDrawString(display, main_window, 
-				 gc, 10, y, contents[i], strlen(contents[i]));
-				 y = y+20;
+			if ((pos=strchr(contents[i], '\r')) != NULL)
+				contents[i][strlen(contents[i])-1] = 0;
+				XDrawString(display, main_window,
+					gc, 10, y, contents[i], strlen(contents[i]));
+				y = y+20;
+			
+
+/*
+namelen = strlen(name); 
+strncpy(copy, name, namelen - 3);
+ add a final null terminator 
+copy[namelen - 3] = 0;
+*/
 			}
+
         	}
 
 		/* Close button */

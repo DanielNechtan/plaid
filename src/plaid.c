@@ -35,6 +35,9 @@
 #include "util.h"
 #include "gui.h"
 
+extern int stripHTMLTags(char *, size_t);
+extern void gui_init();
+
 /* #define DIR_MODE	(S_IRUSR | S_IWUSR | S_IXUSR | 
 	S_IRGRP | S_IWGRP | S_IXGRP) */
 
@@ -84,8 +87,17 @@ plaid_http(char *host, char *ip, short *port, char *path)
 	for (i = 0; i < httphsz; i++)
                 printf("[%s]=[%s]\n", httph[i].key, httph[i].val); 
 	printf("BodySz: [%zu bytes]\n", hget->bodypartsz);
+char *nhtml = malloc(hget->bodypartsz+1);
+nhtml = hget->bodypart;
+/* printf("Body: %s\n", nhtml); */
+
+int htconv = stripHTMLTags(nhtml, strlen(nhtml));
+/* printf("Body: %s\n", nhtml); */
+/* printf("htconv: %d\n", htconv); */
+/*      printf("Body: %s\n", stripHTMLTags(hget->bodypart, hget->bodypartsz)); */
 /*      printf("Body: %s\n", hget->bodypart); */
 /*      printf("Body: %s\n", hget->headpart); */
+
 	return;
 }
 
@@ -114,6 +126,10 @@ plaid_body()
 		}
                 warn("%s", sfn);
 	}
+
+//	char sanitata = hget->bodypart;
+// char sanitata = stripHTMLTags(hget->bodypart,sizeof(bodypart);
+
 	if(p = fprintf(sfp, "%s", hget->bodypart) == -1)
 		errx(1, "fprintf: %d chars written", p);
 	fclose(sfp);
