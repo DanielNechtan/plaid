@@ -116,7 +116,7 @@ extern int
 stripHTMLTags(char *sToClean,size_t size)
     {
         int i=0,j=0,k=0;
-        int flag = 0; 
+        int flag = 3; 
 	// 0: searching for < or & (& as in &bspn; etc), 
 	// 1: searching for >, 
 	// 2: searching for ; after &, 

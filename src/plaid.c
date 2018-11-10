@@ -44,6 +44,7 @@ extern void gui_init();
 char	*url = "", *host = "", *path = "/";
 char	*ip;
 char	sfn[28];
+char	*nhtml;
 
 int	fd;
 size_t	i;
@@ -87,13 +88,19 @@ plaid_http(char *host, char *ip, short *port, char *path)
 	for (i = 0; i < httphsz; i++)
                 printf("[%s]=[%s]\n", httph[i].key, httph[i].val); 
 	printf("BodySz: [%zu bytes]\n", hget->bodypartsz);
-char *nhtml = malloc(hget->bodypartsz+1);
-nhtml = hget->bodypart;
+
 /* printf("Body: %s\n", nhtml); */
 
-int htconv = stripHTMLTags(nhtml, strlen(nhtml));
+/* int htconv = stripHTMLTags(nhtml, strlen(nhtml)); */
+
+/*
+ * nhtml = malloc(hget->bodypartsz+1)
+ * strlcpy(nhtml, hget->bodypart, hget->bodypartsz);
+ * int htconv = tidyhtml(nhtml);
+*/
+
 /* printf("Body: %s\n", nhtml); */
-/* printf("htconv: %d\n", htconv); */
+/*  printf("htconv: %s\n", htconv); */
 /*      printf("Body: %s\n", stripHTMLTags(hget->bodypart, hget->bodypartsz)); */
 /*      printf("Body: %s\n", hget->bodypart); */
 /*      printf("Body: %s\n", hget->headpart); */
@@ -113,7 +120,6 @@ plaid_body()
 	if(n = (strlcpy(sfn, "/tmp/plaid.XXXXXXXXXX", sizeof(sfn)) == NULL))
 		errx(1, "strlcpy");
 
-//	strlcpy(sfn, "/tmp/plaid.XXXXXXXXXX", sizeof(sfn));
 /*        if (unveil(sfn, "rcw") == -1)
  *               err(1, "unveil");
  */	
@@ -127,14 +133,18 @@ plaid_body()
                 warn("%s", sfn);
 	}
 
-//	char sanitata = hget->bodypart;
-// char sanitata = stripHTMLTags(hget->bodypart,sizeof(bodypart);
 
-	if(p = fprintf(sfp, "%s", hget->bodypart) == -1)
-		errx(1, "fprintf: %d chars written", p);
-	fclose(sfp);
+/*
+ *	if(p = fprintf(sfp, "%s", nhtml) == -1)
+ *		errx(1, "fprintf: %d chars written", p);
+ *	fclose(sfp);
+*/
+
+	nhtml = malloc(hget->bodypartsz+1);
+	strlcpy(nhtml, hget->bodypart, hget->bodypartsz);
+/*	int htconva = stripHTMLTags(nhtml, strlen(nhtml)); */
+	int htconv = tidyhtml(nhtml, sfn);
 	printf("sfn: %s\n", sfn);
-// gui_init(sfn);	
 }
 
 int 

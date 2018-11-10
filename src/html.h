@@ -13,7 +13,9 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
-#ifndef UTIL_H
-#define UTIL_H
+#ifndef HTML_H
+#define HTML_H
 
-#endif /* UTIL_H */
+char tidyhtml (char *, char *);
+
+#endif /* HTML_H */
