@@ -27,8 +27,7 @@ probably be extremely expoitable.
 Build libtidy:
 
         cd 3rd/tidy-html5/build/cmake/
-        cmake ../.. -DCMAKE_BUILD_TYPE=Release 
--DBUILD_SHARED_LIB:BOOL=OFF
+        cmake ../.. -DCMAKE_BUILD_TYPE=Release  -DBUILD_SHARED_LIB:BOOL=OFF
         make
 
 Build plaid:
