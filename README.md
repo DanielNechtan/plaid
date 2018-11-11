@@ -31,10 +31,12 @@ Build libtidy:
         make
 
 Build plaid:
+
         cd src/
         make clean
         make
 
 Running plaid:
+
         plaid [-u URL]
 
