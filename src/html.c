@@ -69,6 +69,10 @@ if ( rc > 1 )
 if (rc >= 0)
         rc = tidyOptSetBool(tdoc, TidyWriteBack, yes);
 if ( rc >= 0 )
+        rc = tidyOptSetBool(tdoc, TidyMark, no);
+if ( rc >= 0 )
+	rc = tidyOptSetInt(tdoc, TidyWrapLen, 68);
+if ( rc >= 0 )
 	rc = tidyOptSetValue(tdoc, TidyOutFile, tsfn);
 if ( rc >= 0 )
 	rc = tidySaveBuffer( tdoc, &output );
